@@ -10,6 +10,64 @@ class ProjectionMatrix:
         if len(xy_XYZ_tuples) < 6:
             raise ValueError(f"ProjectionMatrix.Create(): len(xy_XYZ_tuples) ({len(xy_XYZ_tuples)}) < 6")
         """
+          p00 ...                    ...  p23 
+        | ...
+        | Xk Yk Zk 1  0  0  0  0 -ukXk -ukYk -ukZk -1 |   | p00 | = | 0 |
+        | 0  0  0  0  Xk Yk Zk 1 -vkXk -vkYk -vkZk -1 |   | p01 |   | 0 |
+                                                          | p02 |   |...|
+                                                          | ... |
+        """
+        A = np.zeros((2 * len(xy_XYZ_tuples), 12 ), dtype=float)
+        for corr_ndx in range(len(xy_XYZ_tuples)):
+            xy = xy_XYZ_tuples[corr_ndx][0]
+            u = xy[0]
+            v = xy[1]
+            XYZ = xy_XYZ_tuples[corr_ndx][1]
+            X = XYZ[0]
+            Y = XYZ[1]
+            Z = XYZ[2]
+            A[2 * corr_ndx, 0] = X
+            A[2 * corr_ndx, 1] = Y
+            A[2 * corr_ndx, 2] = Z
+            A[2 * corr_ndx, 3] = 1.0
+            A[2 * corr_ndx, 8] = -u * X
+            A[2 * corr_ndx, 9] = -u * Y
+            A[2 * corr_ndx, 10] = -u * Z
+            A[2 * corr_ndx, 11] = -u
+            A[2 * corr_ndx + 1, 4] = X
+            A[2 * corr_ndx + 1, 5] = Y
+            A[2 * corr_ndx + 1, 6] = Z
+            A[2 * corr_ndx + 1, 7] = 1.0
+            A[2 * corr_ndx + 1, 8] = -v * X
+            A[2 * corr_ndx + 1, 9] = -v * Y
+            A[2 * corr_ndx + 1, 10] = -v * Z
+            A[2 * corr_ndx + 1, 11] = -v
+        # Solve homogeneous system of linear equations
+        # Cf. https://stackoverflow.com/questions/1835246/how-to-solve-homogeneous-linear-equations-with-numpy
+        # Find the eigenvalues and eigenvector of A^T A
+        e_vals, e_vecs = np.linalg.eig(np.dot(A.T, A))
+        # Extract the eigenvector (column) associated with the minimum eigenvalue
+        z = e_vecs[:, np.argmin(e_vals)]
+        # Since the coefficients are defined up to a scale factor (we solved a homogeneous system of linear equations), we can multiply them by an arbitrary constant
+        z = z / z[11]
+
+        self.matrix[0, 0] = z[0]
+        self.matrix[0, 1] = z[1]
+        self.matrix[0, 2] = z[2]
+        self.matrix[0, 3] = z[3]
+        self.matrix[1, 0] = z[4]
+        self.matrix[1, 1] = z[5]
+        self.matrix[1, 2] = z[6]
+        self.matrix[1, 3] = z[7]
+        self.matrix[2, 0] = z[8]
+        self.matrix[2, 1] = z[9]
+        self.matrix[2, 2] = z[10]
+        self.matrix[2, 3] = z[11]
+
+    def Create2(self, xy_XYZ_tuples):
+        if len(xy_XYZ_tuples) < 6:
+            raise ValueError(f"ProjectionMatrix.Create(): len(xy_XYZ_tuples) ({len(xy_XYZ_tuples)}) < 6")
+        """
           p00 ...                    ...  p23    1/lambda_i
         | ...
         | Xi Yi Zi 1  0  0  0  0  0  0  0  0  0 ... -xi 0 ... |   | p00 |
