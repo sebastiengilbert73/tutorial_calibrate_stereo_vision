@@ -10,13 +10,13 @@ class BinaryBlobDetector():
         self.params.filterByCircularity = False
         self.params.filterByConvexity = False
         self.params.filterByInertia = False
-        self.params.minArea = 0
+        self.params.minArea = 1
         self.params.maxArea = float('inf')
-        self.params.minCircularity = 0
+        self.params.minCircularity = 1e-8
         self.params.maxCircularity = 1
-        self.params.minConvexity = 0
+        self.params.minConvexity = 1e-8
         self.params.maxConvexity = 1
-        self.params.minInertiaRatio = 0
+        self.params.minInertiaRatio = 1e-8
         self.params.maxInertiaRatio = 1
         # https://stackoverflow.com/questions/59217213/opencv-blob-detector-has-offset-on-found-position
         self.params.minThreshold = 128
